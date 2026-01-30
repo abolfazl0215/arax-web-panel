@@ -573,6 +573,11 @@ const TourForm = ({ tour, onSave, onCancel }) => {
 };
 
 // Stay Form Component
+const inputClass =
+  "w-full px-3 py-2 border border-gray-300 rounded-lg " +
+  "text-gray-900 placeholder-gray-400 " +
+  "focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+
 const StayForm = ({ stay, onSave, onCancel }) => {
   const updateStay = useStore((state) => state.updateStay);
   const addStay = useStore((state) => state.addStay);
@@ -590,7 +595,7 @@ const StayForm = ({ stay, onSave, onCancel }) => {
       included: [],
       notes: [],
       price: [],
-    },
+    }
   );
 
   const [imageInput, setImageInput] = useState("");
@@ -604,401 +609,138 @@ const StayForm = ({ stay, onSave, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      if (stay && stay._id) {
-        // Update existing stay
-        const response = await axios.put(
+      if (stay?._id) {
+        const res = await axios.put(
           `${API_URL}/stays/${stay._id}`,
-          formData,
+          formData
         );
-        updateStay(stay._id, response.data);
+        updateStay(stay._id, res.data);
       } else {
-        // Create new stay
-        const response = await axios.post(
-          `${API_URL}/stays`,
-          formData,
-        );
-        addStay(response.data);
+        const res = await axios.post(`${API_URL}/stays`, formData);
+        addStay(res.data);
       }
-
       onSave(formData);
-    } catch (error) {
-      console.error("Error saving stay:", error);
-      alert("Failed to save stay. Please try again.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save stay");
     } finally {
       setLoading(false);
     }
   };
 
-  // Image handlers
-  const addImage = () => {
-    if (imageInput.trim()) {
-      setFormData({
-        ...formData,
-        images: [...formData.images, imageInput.trim()],
-      });
-      setImageInput("");
-    }
-  };
-  const removeImage = (index) => {
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index),
-    });
-  };
-
-  // Included handlers
-  const addIncluded = () => {
-    if (includedInput.trim()) {
-      setFormData({
-        ...formData,
-        included: [...formData.included, includedInput.trim()],
-      });
-      setIncludedInput("");
-    }
-  };
-  const removeIncluded = (index) => {
-    setFormData({
-      ...formData,
-      included: formData.included.filter((_, i) => i !== index),
-    });
-  };
-
-  // Notes handlers
-  const addNote = () => {
-    if (notesInput.trim()) {
-      setFormData({
-        ...formData,
-        notes: [...formData.notes, notesInput.trim()],
-      });
-      setNotesInput("");
-    }
-  };
-  const removeNote = (index) => {
-    setFormData({
-      ...formData,
-      notes: formData.notes.filter((_, i) => i !== index),
-    });
-  };
-
-  // Price handlers
+  /* ---------- helpers ---------- */
   const addPrice = () => {
-    if (priceFrom && priceTo && priceCurrency) {
-      setFormData({
-        ...formData,
-        price: [
-          ...formData.price,
-          {
-            from: Number(priceFrom),
-            to: Number(priceTo),
-            currency: priceCurrency,
-          },
-        ],
-      });
-      setPriceFrom("");
-      setPriceTo("");
-    }
-  };
-  const removePrice = (index) => {
+    if (!priceFrom || !priceTo || !priceCurrency) return;
     setFormData({
       ...formData,
-      price: formData.price.filter((_, i) => i !== index),
+      price: [
+        ...formData.price,
+        {
+          from: Number(priceFrom),
+          to: Number(priceTo),
+          currency: priceCurrency.trim(),
+        },
+      ],
     });
+    setPriceFrom("");
+    setPriceTo("");
   };
 
   return (
-    <form dir="ltr" onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" dir="ltr">
       {/* Name */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Stay Name
-        </label>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={(e) =>
-            setFormData({ ...formData, name: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-          required
-        />
-      </div>
+      <input
+        className={inputClass}
+        placeholder="Stay name"
+        value={formData.name}
+        onChange={(e) =>
+          setFormData({ ...formData, name: e.target.value })
+        }
+        required
+      />
 
       {/* Type */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Type
-        </label>
-        <select
-          value={formData.type}
-          onChange={(e) =>
-            setFormData({ ...formData, type: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900">
-          <option value="hotel">Hotel</option>
-          <option value="guesthouse">Guesthouse</option>
-          <option value="apartment">Apartment</option>
-          <option value="villa">Villa</option>
-        </select>
-      </div>
-
-      {/* Images */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Images (URL)
-        </label>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="url"
-            value={imageInput}
-            onChange={(e) => setImageInput(e.target.value)}
-            onKeyPress={(e) =>
-              e.key === "Enter" && (e.preventDefault(), addImage())
-            }
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-            placeholder="Enter image URL"
-          />
-          <button
-            type="button"
-            onClick={addImage}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
-            Add
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {formData.images.map((image, index) => (
-            <div key={index} className="relative group">
-              <img
-                src={image}
-                alt={`Image ${index + 1}`}
-                className="w-full h-24 object-cover rounded-lg"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      <select
+        className={inputClass}
+        value={formData.type}
+        onChange={(e) =>
+          setFormData({ ...formData, type: e.target.value })
+        }>
+        <option value="hotel">Hotel</option>
+        <option value="guesthouse">Guesthouse</option>
+        <option value="apartment">Apartment</option>
+        <option value="villa">Villa</option>
+      </select>
 
       {/* Description */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Description
-        </label>
-        <textarea
-          value={formData.description}
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-          rows="4"
-        />
-      </div>
-
-      {/* Stars Count */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Stars Count
-        </label>
-        <input
-          type="number"
-          value={formData.starsCount}
-          min={0}
-          max={5}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              starsCount: Number(e.target.value),
-            })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-        />
-      </div>
-
-      {/* Address */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Address
-        </label>
-        <input
-          type="text"
-          value={formData.address}
-          onChange={(e) =>
-            setFormData({ ...formData, address: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-        />
-      </div>
-
-      {/* Distance to Center */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Distance to Center (km)
-        </label>
-        <input
-          type="number"
-          value={formData.distanceToCenter}
-          min={0}
-          step={0.1}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              distanceToCenter: Number(e.target.value),
-            })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-        />
-      </div>
-
-      {/* Square */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Square (m²)
-        </label>
-        <input
-          type="number"
-          value={formData.square}
-          min={0}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              square: Number(e.target.value),
-            })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-        />
-      </div>
-
-      {/* Included */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Included
-        </label>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="text"
-            value={includedInput}
-            onChange={(e) => setIncludedInput(e.target.value)}
-            onKeyPress={(e) =>
-              e.key === "Enter" && (e.preventDefault(), addIncluded())
-            }
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-            placeholder="Add included item"
-          />
-          <button
-            type="button"
-            onClick={addIncluded}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
-            Add
-          </button>
-        </div>
-        <ul className="list-disc pl-5 text-gray-900">
-          {formData.included.map((item, index) => (
-            <li
-              key={index}
-              className="flex justify-between items-center">
-              {item}
-              <button
-                type="button"
-                onClick={() => removeIncluded(index)}
-                className="ml-2 text-red-500">
-                x
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Notes */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Notes
-        </label>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="text"
-            value={notesInput}
-            onChange={(e) => setNotesInput(e.target.value)}
-            onKeyPress={(e) =>
-              e.key === "Enter" && (e.preventDefault(), addNote())
-            }
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-            placeholder="Add note"
-          />
-          <button
-            type="button"
-            onClick={addNote}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
-            Add
-          </button>
-        </div>
-        <ul className="list-disc pl-5 text-gray-900">
-          {formData.notes.map((note, index) => (
-            <li
-              key={index}
-              className="flex justify-between items-center">
-              {note}
-              <button
-                type="button"
-                onClick={() => removeNote(index)}
-                className="ml-2 text-red-500">
-                x
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <textarea
+        rows={3}
+        className={inputClass}
+        placeholder="Description"
+        value={formData.description}
+        onChange={(e) =>
+          setFormData({ ...formData, description: e.target.value })
+        }
+      />
 
       {/* Price */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block mb-1 text-sm font-medium text-gray-900">
           Price
         </label>
-        <div className="flex gap-2 mb-2">
+
+        <div className="flex gap-2 items-center">
           <input
             type="number"
             placeholder="From"
             value={priceFrom}
             onChange={(e) => setPriceFrom(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
           />
           <input
             type="number"
             placeholder="To"
             value={priceTo}
             onChange={(e) => setPriceTo(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
           />
-          <select
+          <input
+            type="text"
+            placeholder="Currency"
             value={priceCurrency}
-            onChange={(e) => setPriceCurrency(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900">
-            <option value="USD">USD</option>
-            <option value="AMD">AMD</option>
-          </select>
+            onChange={(e) =>
+              setPriceCurrency(e.target.value.toUpperCase())
+            }
+            className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+          />
           <button
             type="button"
             onClick={addPrice}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+            className="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg whitespace-nowrap hover:bg-gray-300">
             Add
           </button>
         </div>
-        <ul className="list-disc pl-5 text-gray-900">
-          {formData.price.map((p, index) => (
+
+        {/* Price list */}
+        <ul className="mt-2 space-y-1">
+          {formData.price.map((p, i) => (
             <li
-              key={index}
-              className="flex justify-between items-center">
-              {p.from} - {p.to} {p.currency}
+              key={i}
+              className="flex justify-between items-center text-gray-900 font-medium">
+              <span>
+                {p.from} – {p.to} {p.currency}
+              </span>
               <button
                 type="button"
-                onClick={() => removePrice(index)}
-                className="ml-2 text-red-500">
-                x
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    price: formData.price.filter((_, x) => x !== i),
+                  })
+                }
+                className="text-red-600 font-semibold">
+                ×
               </button>
             </li>
           ))}
@@ -1010,15 +752,15 @@ const StayForm = ({ stay, onSave, onCancel }) => {
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-          <Save className="w-4 h-4" />
+          className="flex-1 bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700">
+          <Save className="inline w-4 h-4 mr-1" />
           {loading ? "Saving..." : "Save"}
         </button>
+
         <button
           type="button"
           onClick={onCancel}
-          disabled={loading}
-          className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          className="flex-1 bg-gray-200 text-gray-900 font-semibold py-2 rounded-lg hover:bg-gray-300">
           Cancel
         </button>
       </div>
@@ -1026,6 +768,8 @@ const StayForm = ({ stay, onSave, onCancel }) => {
   );
 };
 
+
+// Transfer Form Component
 // Transfer Form Component
 const TransferForm = ({ transfer, onSave, onCancel }) => {
   const [formData, setFormData] = useState(
@@ -1036,11 +780,15 @@ const TransferForm = ({ transfer, onSave, onCancel }) => {
       releaseYear: new Date().getFullYear(),
       insurance: true,
       features: [],
-      pricePerKm: 0,
+      pricePerKm: [],
     },
   );
 
   const [featureInput, setFeatureInput] = useState("");
+  const [priceInput, setPriceInput] = useState({
+    currency: "",
+    price: "",
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -1061,6 +809,23 @@ const TransferForm = ({ transfer, onSave, onCancel }) => {
     setFormData({
       ...formData,
       features: formData.features.filter((_, i) => i !== index),
+    });
+  };
+
+  const addPrice = () => {
+    if (priceInput.currency.trim() && priceInput.price) {
+      setFormData({
+        ...formData,
+        pricePerKm: [...formData.pricePerKm, { ...priceInput }],
+      });
+      setPriceInput({ currency: "", price: "" });
+    }
+  };
+
+  const removePrice = (index) => {
+    setFormData({
+      ...formData,
+      pricePerKm: formData.pricePerKm.filter((_, i) => i !== index),
     });
   };
 
@@ -1143,20 +908,55 @@ const TransferForm = ({ transfer, onSave, onCancel }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Price per Kilometer ($)
+          Price per Kilometer
         </label>
-        <input
-          type="number"
-          step="0.01"
-          value={formData.pricePerKm}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              pricePerKm: parseFloat(e.target.value),
-            })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-        />
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            value={priceInput.currency}
+            onChange={(e) =>
+              setPriceInput({
+                ...priceInput,
+                currency: e.target.value,
+              })
+            }
+            className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            placeholder="USD"
+          />
+          <input
+            type="number"
+            step="0.01"
+            value={priceInput.price}
+            onChange={(e) =>
+              setPriceInput({ ...priceInput, price: e.target.value })
+            }
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            placeholder="Enter price"
+          />
+          <button
+            type="button"
+            onClick={addPrice}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+            Add
+          </button>
+        </div>
+        <div className="space-y-2">
+          {formData.pricePerKm.map((item, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="text-sm text-gray-900">
+                {item.currency}: {item.price}
+              </span>
+              <button
+                type="button"
+                onClick={() => removePrice(index)}
+                className="text-red-600 hover:text-red-700">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div>
@@ -1558,7 +1358,28 @@ export default function AdminPanel() {
                       <div className="text-sm text-gray-600 mb-4 space-y-1">
                         <p>👥 {item.passengers} passengers</p>
                         <p>📅 {item.releaseYear}</p>
-                        <p>💲 ${item.pricePerKm} / km</p>
+                        <div>
+                          <p className="font-medium mb-1">
+                            💲 Price per km:
+                          </p>
+                          <div className="space-y-1 pl-4">
+                            {item.pricePerKm &&
+                            item.pricePerKm.length > 0 ? (
+                              item.pricePerKm.map(
+                                (priceItem, index) => (
+                                  <p key={index}>
+                                    {priceItem.currency}:{" "}
+                                    {priceItem.price}
+                                  </p>
+                                ),
+                              )
+                            ) : (
+                              <p className="text-gray-400">
+                                No prices set
+                              </p>
+                            )}
+                          </div>
+                        </div>
                         {item.insurance && (
                           <p>✅ Insurance included</p>
                         )}
